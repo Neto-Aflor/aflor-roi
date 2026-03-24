@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFLOR ROI Simulator - Dashboard Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f1e2d 0%, #0c1621 100%);
+            color: #e0e7ff;
+            min-height: 100vh;
+        }
+
+        /* Navy Blue Theme */
+        :root {
+            --navy-dark: #0f1e2d;
+            --navy-darker: #0c1621;
+            --navy-light: #1a2a3f;
+            --green-accent: #22c55e;
+            --green-light: #86efac;
+            --text-primary: #e0e7ff;
+            --text-secondary: #a5b4fc;
+            --border-color: rgba(34, 197, 94, 0.1);
+            --card-bg: rgba(12, 22, 33, 0.8);
+        }
+
+        .container-fluid {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 380px;
+            background: linear-gradient(180deg, #0c1621 0%, #0a0f1a 100%);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 32px 24px;
+            box-shadow: inset -1px 0 0 rgba(34, 197, 94, 0.05);
+        }
+
+        .sidebar-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--green-accent);
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            font-weight: 500;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .input-field:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--green-accent);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+
+        .input-hint {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            opacity: 0.8;
+        }
+
+        .btn-calculate {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--green-accent) 0%, #16a34a 100%);
+            color: #0f1e2d;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 24px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 8px 16px rgba(34, 197, 94, 0.2);
+        }
+
+        .btn-calculate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-calculate:active {
+            transform: translateY(0);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            margin-bottom: 32px;
+        }
+
+        .header-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Metrics Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--green-accent) 0%, transparent 100%);
+        }
+
+        .metric-card:hover {
+            border-color: var(--green-accent);
+            box-shadow: 0 8px 24px rgba(34, 197, 94, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--green-accent);
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+        .metric-unit {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+            backdrop-filter: blur(10px);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            letter-spacing: -0.3px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 16px;
+        }
+
+        /* Storytelling Box */
+        .storytelling-box {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+            backdrop-filter: blur(10px);
+        }
+
+        .storytelling-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--green-accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .storytelling-text {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        .storytelling-highlight {
+            color: var(--green-light);
+            font-weight: 600;
+        }
+
+        /* Export Button */
+        .export-section {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-export {
+            flex: 1;
+            padding: 12px 20px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid var(--green-accent);
+            color: var(--green-accent);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-export:hover {
+            background: rgba(34, 197, 94, 0.15);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(34, 197, 94, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 197, 94, 0.4);
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .container-fluid {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                max-height: 50vh;
+            }
+
+            .main-content {
+                padding: 24px;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .sidebar {
+                padding: 20px 16px;
+            }
+
+            .main-content {
+                padding: 16px;
+            }
+
+            .header-title {
+                font-size: 24px;
+            }
+
+            .metric-value {
+                font-size: 22px;
+            }
+
+            .metrics-grid {
+                gap: 12px;
+            }
+        }
+
+        /* Loading Animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .loading {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-title">AFLOR ROI</div>
+            <div class="sidebar-subtitle">Simulador Premium de Retorno</div>
+
+            <form id="inputForm">
+                <div class="input-group">
+                    <label class="input-label">Colaboradores Operacionais</label>
+                    <input type="number" id="colaboradores" class="input-field" value="1" min="1" max="100">
+                    <div class="input-hint">Quantos colaboradores trabalham em processos manuais?</div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Salário Médio Mensal (R$)</label>
+                    <input type="number" id="salario" class="input-field" value="3242" min="0" step="100">
+                    <div class="input-hint">Salário bruto mensal do colaborador operacional</div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Minutos Perdidos por Dia</label>
+                    <input type="number" id="minutosPerdidos" class="input-field" value="150" min="0" step="5">
+                    <div class="input-hint">Transporte + Digitalização + Rastreio + Relatórios</div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Formulários por Dia/Colaborador</label>
+                    <input type="number" id="formularios" class="input-field" value="3" min="0" step="0.5">
+                    <div class="input-hint">Quantidade média de formulários preenchidos</div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Custo Unitário do Papel (R$)</label>
+                    <input type="number" id="custoPapel" class="input-field" value="1.30" min="0" step="0.01">
+                    <div class="input-hint">Custo por formulário impresso</div>
+                </div>
+
+                <button type="button" class="btn-calculate" onclick="calcularROI()">Calcular ROI</button>
+            </form>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <div class="header-title">Dashboard de ROI</div>
+                <div class="header-subtitle">Análise de economia com a plataforma AFLOR</div>
+            </div>
+
+            <!-- Metrics Cards -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Ganho Líquido Anual</div>
+                    <div class="metric-value" id="ganhoAnual">R$ 0,00</div>
+                    <div class="metric-unit">economia anualizada</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">ROI (%)</div>
+                    <div class="metric-value" id="roiPercentual">0%</div>
+                    <div class="metric-unit">retorno sobre investimento</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-label">Payback</div>
+                    <div class="metric-value" id="payback">0 meses</div>
+                    <div class="metric-unit">para recuperar investimento</div>
+                </div>
+            </div>
+
+            <!-- Comparison Chart -->
+            <div class="chart-section">
+                <div class="chart-title">Comparativo: Custo Manual vs AFLOR</div>
+                <div class="chart-container">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Storytelling Box -->
+            <div class="storytelling-box">
+                <div class="storytelling-title">📊 Diagnóstico Executivo</div>
+                <div class="storytelling-text" id="storytelling">
+                    Preencha os dados na barra lateral e clique em "Calcular ROI" para visualizar o diagnóstico personalizado.
+                </div>
+            </div>
+
+            <!-- Export Options -->
+            <div class="export-section">
+                <button class="btn-export" onclick="exportarHTML()">📥 Exportar HTML</button>
+                <button class="btn-export" onclick="exportarJSON()">📋 Exportar Dados</button>
+                <button class="btn-export" onclick="imprimirRelatorio()">🖨️ Imprimir</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+
+        // Tabela de preços AFLOR
+        function calcularCustoAFLOR(colaboradores) {
+            if (colaboradores === 1) return 550;
+            if (colaboradores === 2) return 650;
+            if (colaboradores === 3) return 750;
+            if (colaboradores === 4) return 850;
+            if (colaboradores >= 5) return colaboradores * 185;
+            return 0;
+        }
+
+        // Fator de dias: dias por semana * 4 (semanas por mês)
+        const DIAS_SEMANA = 5;
+        const FATOR_DIAS = DIAS_SEMANA * 4;  // 20 dias por mês
+        const HORAS_MES = 220;  // Horas trabalhadas por mês
+
+        function formatarMoeda(valor) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(valor);
+        }
+
+        function calcularROI() {
+            // Capturar inputs
+            const colaboradores = parseFloat(document.getElementById('colaboradores').value) || 1;
+            const salario = parseFloat(document.getElementById('salario').value) || 3242;
+            const minutosPerdidos = parseFloat(document.getElementById('minutosPerdidos').value) || 150;
+            const formularios = parseFloat(document.getElementById('formularios').value) || 3;
+            const custoPapel = parseFloat(document.getElementById('custoPapel').value) || 1.30;
+
+            // Validações
+            if (colaboradores < 1 || salario < 0 || minutosPerdidos < 0 || formularios < 0 || custoPapel < 0) {
+                alert('Por favor, verifique os valores inseridos.');
+                return;
+            }
+
+            // ===== CÁLCULO DO CUSTO MANUAL MENSAL =====
+            // Baseado nas fórmulas do Excel:
+            // E2 = (Formulários × Custo Papel × Colaboradores) × (Dias/Semana × 4)
+            // E3+ = (Minutos/60 × Salário/220 × Colaboradores) × (Dias/Semana × 4)
+            // E8 = (Serviços Afetados × Custo Serviço) × 4
+
+            // Custo de Papel: formulários × custo unitário × colaboradores × fator dias
+            const custoPapelMensal = (formularios * custoPapel * colaboradores) * FATOR_DIAS;
+
+            // Custo de Tempo: (minutos/60) × (salário/HORAS_MES) × colaboradores × fator dias
+            const custoTempoMensal = ((minutosPerdidos / 60) * (salario / HORAS_MES) * colaboradores) * FATOR_DIAS;
+
+            // Custo de Serviços Afetados: (1 serviço × R$ 50) × 4
+            const custoServicosMensal = (1 * 50) * 4;
+
+            const custoManualMensal = custoPapelMensal + custoTempoMensal + custoServicosMensal;
+
+            // ===== CÁLCULO DO CUSTO AFLOR MENSAL =====
+            const custoAFLORMensal = calcularCustoAFLOR(colaboradores);
+
+            // ===== ECONOMIA =====
+            const economiaMensal = custoManualMensal - custoAFLORMensal;
+            const ganhoAnual = economiaMensal * 12;
+
+            // ===== ROI =====
+            const roiPercentual = (economiaMensal / custoAFLORMensal) * 100;
+            const payback = custoAFLORMensal / economiaMensal;
+
+            // ===== ATUALIZAR CARDS =====
+            document.getElementById('ganhoAnual').textContent = formatarMoeda(ganhoAnual);
+            document.getElementById('roiPercentual').textContent = roiPercentual.toFixed(1) + '%';
+            document.getElementById('payback').textContent = payback.toFixed(2) + ' meses';
+
+            // ===== ATUALIZAR GRÁFICO =====
+            atualizarGrafico(custoManualMensal, custoAFLORMensal);
+
+            // ===== GERAR STORYTELLING =====
+            gerarStorytellingDiagnostico(colaboradores, salario, custoManualMensal, custoAFLORMensal, economiaMensal, ganhoAnual, roiPercentual, payback);
+
+            // Debug: Log dos cálculos
+            console.log('=== CÁLCULOS ROI ===');
+            console.log(`Custo Papel: R$ ${custoPapelMensal.toFixed(2)}`);
+            console.log(`Custo Tempo: R$ ${custoTempoMensal.toFixed(2)}`);
+            console.log(`Custo Serviços: R$ ${custoServicosMensal.toFixed(2)}`);
+            console.log(`Custo Manual Total: R$ ${custoManualMensal.toFixed(2)}`);
+            console.log(`Custo AFLOR: R$ ${custoAFLORMensal.toFixed(2)}`);
+            console.log(`Economia Mensal: R$ ${economiaMensal.toFixed(2)}`);
+            console.log(`Ganho Anual: R$ ${ganhoAnual.toFixed(2)}`);
+            console.log(`ROI: ${roiPercentual.toFixed(2)}%`);
+            console.log(`Payback: ${payback.toFixed(2)} meses`);
+        }
+
+        function atualizarGrafico(custoManual, custoAFLOR) {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Custo Mensal', 'Custo Anual'],
+                    datasets: [
+                        {
+                            label: 'Processo Manual',
+                            data: [custoManual, custoManual * 12],
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            hoverBackgroundColor: 'rgba(239, 68, 68, 1)',
+                        },
+                        {
+                            label: 'Plataforma AFLOR',
+                            data: [custoAFLOR, custoAFLOR * 12],
+                            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            hoverBackgroundColor: 'rgba(34, 197, 94, 1)',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#a5b4fc',
+                                font: { size: 13, weight: '600' },
+                                padding: 20,
+                                usePointStyle: true,
+                            },
+                            position: 'top',
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 30, 45, 0.9)',
+                            titleColor: '#22c55e',
+                            bodyColor: '#e0e7ff',
+                            borderColor: 'rgba(34, 197, 94, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatarMoeda(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#a5b4fc',
+                                font: { size: 12 },
+                                callback: function(value) {
+                                    return 'R$ ' + (value / 1000).toFixed(0) + 'k';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(34, 197, 94, 0.05)',
+                                drawBorder: false,
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#a5b4fc',
+                                font: { size: 12, weight: '600' }
+                            },
+                            grid: {
+                                display: false,
+                                drawBorder: false,
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function gerarStorytellingDiagnostico(colaboradores, salario, custoManual, custoAFLOR, economia, ganhoAnual, roi, payback) {
+            let diagnostico = '';
+
+            if (economia > 0) {
+                diagnostico = `
+                    Sua empresa está <span class="storytelling-highlight">deixando R$ ${formatarMoeda(ganhoAnual).replace('R$ ', '')} na mesa por ano</span> 
+                    devido a processos analógicos. Com a AFLOR, você economiza <span class="storytelling-highlight">R$ ${formatarMoeda(economia)}</span> 
+                    mensalmente, representando um <span class="storytelling-highlight">ROI de ${roi.toFixed(1)}%</span>. 
+                    O investimento se paga em apenas <span class="storytelling-highlight">${payback.toFixed(1)} meses</span>.
+                    <br><br>
+                    Com ${colaboradores} colaborador(es) operacional(is) e um custo manual de ${formatarMoeda(custoManual)}/mês, 
+                    a plataforma AFLOR (${formatarMoeda(custoAFLOR)}/mês) é a solução mais inteligente para sua operação.
+                `;
+            } else {
+                diagnostico = `
+                    Com a configuração atual, o custo da AFLOR é superior ao custo manual. 
+                    Isso pode indicar que sua operação ainda não está otimizada para a plataforma, 
+                    ou que há oportunidades de reduzir o tempo perdido em processos manuais.
+                `;
+            }
+
+            document.getElementById('storytelling').innerHTML = diagnostico;
+        }
+
+        function exportarHTML() {
+            const ganhoAnual = document.getElementById('ganhoAnual').textContent;
+            const roi = document.getElementById('roiPercentual').textContent;
+            const payback = document.getElementById('payback').textContent;
+            const storytelling = document.getElementById('storytelling').textContent;
+
+            const htmlContent = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFLOR ROI - Relatório Exportado</title>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 40px 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #22c55e;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            color: #0f1e2d;
+            font-size: 32px;
+            margin: 0;
+        }
+        .header p {
+            color: #666;
+            margin: 10px 0 0 0;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 40px 0;
+        }
+        .metric {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #22c55e;
+            text-align: center;
+        }
+        .metric-label {
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .metric-value {
+            color: #22c55e;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .storytelling {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+            line-height: 1.6;
+            color: #333;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AFLOR ROI Simulator</h1>
+            <p>Relatório de Retorno sobre Investimento</p>
+        </div>
+
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-label">Ganho Anual</div>
+                <div class="metric-value">${ganhoAnual}</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">ROI</div>
+                <div class="metric-value">${roi}</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Payback</div>
+                <div class="metric-value">${payback} meses</div>
+            </div>
+        </div>
+
+        <div class="storytelling">
+            ${storytelling}
+        </div>
+
+        <div class="footer">
+            <p>Relatório gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+            <p>AFLOR - Plataforma de Automação de Processos</p>
+        </div>
+    </div>
+</body>
+</html>
+            `;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AFLOR_ROI_${new Date().toISOString().split('T')[0]}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportarJSON() {
+            const dados = {
+                timestamp: new Date().toISOString(),
+                inputs: {
+                    colaboradores: document.getElementById('colaboradores').value,
+                    salario: document.getElementById('salario').value,
+                    minutosPerdidos: document.getElementById('minutosPerdidos').value,
+                    formularios: document.getElementById('formularios').value,
+                    custoPapel: document.getElementById('custoPapel').value,
+                },
+                resultados: {
+                    ganhoAnual: document.getElementById('ganhoAnual').textContent,
+                    roiPercentual: document.getElementById('roiPercentual').textContent,
+                    payback: document.getElementById('payback').textContent,
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AFLOR_ROI_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function imprimirRelatorio() {
+            window.print();
+        }
+
+        // Calcular automaticamente ao carregar
+        window.addEventListener('load', function() {
+            calcularROI();
+        });
+
+        // Recalcular quando mudar inputs
+        document.getElementById('inputForm').addEventListener('change', calcularROI);
+    </script>
+</body>
+</html>
